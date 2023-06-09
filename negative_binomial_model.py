@@ -6,184 +6,155 @@ Created on Wed Mar 15 10:43:09 2023
 @author: tizianolatino
 """
 
-
-import numpy as np
 import pandas as pd
-import networkx as nx
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import math
+import numpy as np
 
+def intrachr_contacts_mean_var(metadata, data):
+    """
+    Calculates the mean and variance of contact value for each distance within each chromosome.
 
-#data = pd.read_csv('data/raw_GM12878_1Mb_prepro_reduced.csv')
-#metadata = pd.read_csv('data/metadata_prepro_reduced.csv')
-data = pd.read_csv('data/raw_GM12878_1Mb_prepro.csv')
-metadata = pd.read_csv('data/metadata_prepro.csv')
+    Args:
+    metadata (pd.DataFrame): A dataframe containing the metadata for chromosomes. 
+                             It must have the columns "chr", "start", and "end".
+    data (pd.DataFrame): The adjacency matrix represented as a dataframe, representing contacts between bins.
 
-##########################################################################################################
-#------------------------------------INTRACHROMOSOMAL NEGATIVE  BINOMIAL-------------------------------------------#
+    Returns:
+    pd.DataFrame: A dataframe where the index is the chromosome, each column is a distance,
+                  and the value is the mean and variance of contact value for that distance within the chromosome.
+    """
+    distance_means = pd.DataFrame()
+    distance_vars = pd.DataFrame()
 
+    # Iterate over each chromosome in the metadata
+    for _, row in metadata.iterrows():
+        # Select the data for this chromosome
+        chr_data = data.iloc[row['start']:row['end']+1, row['start']:row['end']+1]
 
-#plt.hist(diag,bins=int(np.sqrt(len(diag))))
+        # Calculate the distance for each pair of bins
+        distances = np.abs(np.subtract.outer(np.arange(row['end'] - row['start'] + 1), np.arange(row['end'] - row['start'] + 1)))
 
-metadata_bin_col = {'chr': [], 'distance': [], 'r': [], 'mean': [], 'p': []}
-  
-  
+        # Flatten the distances and the data, and create a DataFrame
+        distances_flat = distances.flatten()
+        chr_data_flat = chr_data.values.flatten()
+        df = pd.DataFrame({'distance': distances_flat, 'value': chr_data_flat})
 
-metadata_bin = pd.DataFrame(metadata_bin_col)
+        # Group by distance and calculate the mean and variance
+        distance_stats = df.groupby('distance').agg(['mean', 'var'])
+        distance_mean = distance_stats['value', 'mean']
+        distance_var = distance_stats['value', 'var']
 
-#chr_to_plot = "'chr21'"
+        # Combine with the existing distance_means and distance_vars
+        distance_means = pd.concat([distance_means, distance_mean.to_frame().T])
+        distance_vars = pd.concat([distance_vars, distance_var.to_frame().T])
 
-for chr_i in range(0,len(metadata)):
+    distance_means.index = metadata['chr']
+    distance_vars.index = metadata['chr']
+
+    distance_means.index = metadata['chr']
+
+    return distance_means, distance_vars
+
+def interchr_contacts_mean_var(metadata, data):
+    """
+   Calculates the mean and variance of contact value for interchromosomal interactions.
+
+   Args:
+   metadata (pd.DataFrame): A dataframe containing the metadata for chromosomes. 
+                            It must have the columns "chr", "start", and "end".
+   data (pd.DataFrame): The adjacency matrix represented as a dataframe, representing contacts between bins.
+
+   Returns:
+   tuple: The mean and variance of contact value for interchromosomal interactions.
+   """
+    # Create a copy of the data to avoid modifying the original
+    data_copy = data.copy()
+
+    # Set the intrachromosomal elements to NaN
+    for _, row in metadata.iterrows():
+        data_copy.iloc[row['start']:row['end']+1, row['start']:row['end']+1] = np.nan
+
+    # The remaining elements are the interchromosomal interactions
+    interchromosomal_values = data_copy.values.flatten()
+
+    # Remove NaN values
+    interchromosomal_values = interchromosomal_values[~np.isnan(interchromosomal_values)]
+
+      # Calculate the mean and variance
+    mean = interchromosomal_values.mean()
+    var = interchromosomal_values.var()
+
+    return mean, var
+
+from scipy.stats import nbinom
+
+def generate_data_from_neg_binomial(metadata, data):
+    """
+    Generates a new dataframe with the same shape as data, using a negative binomial distribution.
+
+    Args:
+    metadata (pd.DataFrame): A dataframe containing the metadata for chromosomes. 
+                             It must have the columns "chr", "start", and "end".
+    data (pd.DataFrame): The adjacency matrix represented as a dataframe, representing contacts between bins.
+
+    Returns:
+    pd.DataFrame: A new dataframe with values generated from a negative binomial distribution.
+    """
+    # Calculate the mean and variance for each distance within each chromosome, 
+    # and for interchromosomal interactions
+    distance_means, distance_vars = intrachr_contacts_mean_var(metadata, data)
+    interchr_mean, interchr_var = interchr_contacts_mean_var(metadata, data)
+
+    # Initialize the new data with zeros
+    new_data = pd.DataFrame(0, index=data.index, columns=data.columns)
     
-    df = data.iloc[metadata['start'][chr_i]:metadata['end'][chr_i]+1,
-                   metadata['start'][chr_i]:metadata['end'][chr_i]+1]
-    n=df.sum().sum()
-    for diag_i in range(1,len(df)):
-        diag = np.diag(df, k=diag_i)
-        if not diag.any():
-            mean = np.mean(diag)  
-            r = 1 
-            p = 1
-            row = [metadata['chr'][chr_i], int(diag_i), r, mean, p ]
-            metadata_bin.loc[len(metadata_bin)] = row
-        elif len(diag) <= 2:
-            diag = np.append(diag,np.mean(diag)*2)
-            diag = np.append(diag,0)
-            mean = np.mean(diag)   
-            var = np.var(diag)        
-            p = mean/var
-            r = mean**2/(var-mean)
-            if p!=p:print(diag,mean,var,p,r)
-            if var<mean:print(diag,mean,var,p,r)
-            row = [metadata['chr'][chr_i], int(diag_i), r, mean, p ]
-            metadata_bin.loc[len(metadata_bin)] = row
-        else:          
-            mean = np.mean(diag)   
-            var = np.var(diag)        
-            p = mean/var
-            r = mean**2/(var-mean)
-            if p!=p:print(diag,mean,var,p,r)
-            if var<mean:
-                diag = np.append(diag,np.mean(diag)*2)
-                diag = np.append(diag,0)
-                mean = np.mean(diag)   
-                var = np.var(diag)        
+    
+    # For each chromosome
+    for chr, row in metadata.iterrows():
+        prev_p = prev_r = None
+        # For each distance
+        for distance in range(row['end'] - row['start'] + 1):
+            # Skip the case of distance equals to zero
+            if distance == 0: 
+                continue
+            # Calculate the parameters for the negative binomial distribution
+            mean = distance_means.iloc[chr, distance]
+            var = distance_vars.iloc[chr, distance]           
+            if var != None and mean != None and var > mean and var != 0:
                 p = mean/var
                 r = mean**2/(var-mean)
-                if p!=p:print(diag,mean,var,p,r)
-                if var<mean:print(diag,mean,var,p,r)
-                row = [metadata['chr'][chr_i], int(diag_i), r, mean, p ]
-                metadata_bin.loc[len(metadata_bin)] = row
-                
-            row = [metadata['chr'][chr_i], int(diag_i), r, mean, p ]
-            metadata_bin.loc[len(metadata_bin)] = row
-            
-        
+            else:
+                p, r = prev_p, prev_r
+            prev_p, prev_r = p, r
+
+            # For each pair of bins at this distance
+            for i in range(row['start'], row['end'] - distance + 1):
+                j = i + distance                
+                # Generate a value from the negative binomial distribution
+                new_data.loc[i, j] = np.random.negative_binomial(r, p)
+                new_data.loc[j, i] = new_data.loc[i, j]
+
+
+    # For the interchromosomal regions
+    p = interchr_mean / interchr_var
+    r = interchr_mean**2 / (interchr_var - interchr_mean)
+
+    # Get the upper triangular indices excluding the diagonal
+    i_upper, j_upper = np.triu_indices(new_data.shape[0], 1)
     
-'''   
-    if metadata['chr'][chr_i] == chr_to_plot :
-    #if 0 != 1:        
-        
-        trials_tot = metadata_bin['p'].loc[metadata_bin['chr'] == metadata['chr'][chr_i]]
-        distances =  list(range(1,len(trials_tot)+1))
-        
-        #linear plot
-        plt.plot(distances, trials_tot,label=metadata['chr'][chr_i])
-        plt.xlabel('Genomic Distance(Mbp)', fontsize='xx-large')
-        plt.grid()
-        plt.legend()
-        plt.ylabel('Total Number of Contacts',fontsize='xx-large')
-        plt.show()    
-
-        #loglog plot 
-        plt.loglog(distances, trials_tot,label=metadata['chr'][chr_i])
-        plt.xlabel('Genomic Distance(Mbp)', fontsize='xx-large')
-        plt.grid()
-        plt.ylabel('Total Number of Contacts(log)',fontsize='xx-large')
-        plt.show()       
-'''
+    # Find the indices of the 0 values in the upper triangle
+    zero_indices = np.where(new_data.values[i_upper, j_upper] == 0)
     
+    # Compute the random values to assign
+    values = nbinom.rvs(n=r, p=p, size=zero_indices[0].size)
     
-
-##########################################################################################################
-#------------------------------------INTERCHROMOSOMAL NEGATIVE BINOMIAL-------------------------------------------#
-
-'''
-#based on distance
-metadata_bin_col = {'chr': [], 'distance': [], 'n': [], 'mean': [], 'p': []}
-
-metadata_bin_inter = pd.DataFrame(metadata_bin_col)
-
-def interchr(df, dim, weights_mean):
-    weights = np.empty((dim,)+(0,)).tolist()
-    for dis in range(1,5):
-        print(dis)
-        diagonal = list(np.diag(df, k=-dis)) 
-        print('lunghezza diagonale:',len(diagonal))
-        diag_index = []
-        for i in range(0,len(diagonal)):
-            diag_index.append((i,i+dis))
-        print(diag_index[0])
-        #seleziono i valori della diagonale fuori dai chr
-        for i in range(0,len(diag_index)):
-            for index, row in metadata.iterrows():
-                if row['start'] <=diag_index[i][0]<=row['end']:
-                    start_i = index 
-                if row['start'] <=diag_index[i][1]<=row['end']:
-                    end_i = index                
-            if start_i != end_i: weights[dis].append(diagonal[i])
-    print(weights)
-    for dist in range(1,dim):
-        print(len(weights[dist]))
-        mean = np.mean(weights[dist])
-        weights_mean.append(mean)
-     
-    return weights_mean
- 
-weights_mean = []       
-interchr(data,5,weights_mean)
-'''
+    # Assign the random values to the 0 cells in the upper triangle
+    new_data.values[i_upper[zero_indices], j_upper[zero_indices]] = values
+    
+    # To keep the matrix symmetric, assign the same values to the lower triangle
+    new_data.values[j_upper[zero_indices], i_upper[zero_indices]] = values
 
 
-#uniform 
-interchr_values = []
+    # Fill the diagonal with zeros
+    np.fill_diagonal(new_data.values, 0)
 
-for i in range(1,len(metadata)):
-    x = 0
-    values = sum(data.iloc[metadata['start'][i]:metadata['end'][i]+1,0:metadata['start'][i]].values.tolist(),[])
-    interchr_values.append(values)
-
-
-interchr_tot = np.asarray(sum(interchr_values, []))
-
-
-#negative binomial
-n = sum(interchr_tot)
-mean = np.mean(interchr_tot)   
-var = np.var(interchr_tot)
-
-p = mean/var
-r = mean**2/(var-mean)
-
-#s = np.random.negative_binomial(r, p, 100000)
-
-row = ['interchr', 0., r, mean, p ]
-metadata_bin.loc[len(metadata_bin)] = row
-
-for i in range(0,len(metadata_bin)):
-    metadata_bin['chr'][i] = metadata_bin['chr'][i].replace("'", '')
-
-#metadata_bin.to_csv('data/metadata_neg_bin_reduced.csv', index=False)
-metadata_bin.to_csv('data/metadata_neg_bin.csv', index=False)
-
-
-for i in range(0,len(metadata)):
-    metadata['chr'][i] = metadata['chr'][i].replace("'", '')
-
-#metadata_bin.to_csv('data/metadata_neg_bin_reduced.csv', index=False)
-metadata.to_csv('data/metadata_prepo.csv', index=False)
-
-
-
-
+    return new_data

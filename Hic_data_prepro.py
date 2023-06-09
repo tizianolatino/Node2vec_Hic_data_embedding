@@ -130,15 +130,6 @@ def remove_isolated_bins(metadata, data):
 
     return metadata, data
     
-if __name__ == "__main__":
-    
-    data = pd.read_csv('Data/raw_GM12878_1Mb.csv', header=None)
-    metadata = pd.read_csv('Data/metadata.csv')
-    
-    updated_metadata, updated_data = drop_chr(metadata, data,  "'chrY'")
-    
-    updated_metadata, updated_data = remove_isolated_bins(updated_metadata, updated_data)
-    
 
 
 
