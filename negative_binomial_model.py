@@ -8,6 +8,7 @@ Created on Wed Mar 15 10:43:09 2023
 
 import pandas as pd
 import numpy as np
+from scipy.stats import nbinom
 
 def intrachr_contacts_mean_var(metadata, data):
     """
@@ -19,11 +20,11 @@ def intrachr_contacts_mean_var(metadata, data):
     data (pd.DataFrame): The adjacency matrix represented as a dataframe, representing contacts between bins.
 
     Returns:
-    pd.DataFrame: A dataframe where the index is the chromosome, each column is a distance,
-                  and the value is the mean and variance of contact value for that distance within the chromosome.
+    dict: Two dictionaries where the keys are the chromosomes, each item is a dictionary where each key is a distance,
+          and the value is the mean and variance of contact value for that distance within the chromosome.
     """
-    distance_means = pd.DataFrame()
-    distance_vars = pd.DataFrame()
+    distance_means = {}
+    distance_vars = {}
 
     # Iterate over each chromosome in the metadata
     for _, row in metadata.iterrows():
@@ -34,25 +35,17 @@ def intrachr_contacts_mean_var(metadata, data):
         distances = np.abs(np.subtract.outer(np.arange(row['end'] - row['start'] + 1), np.arange(row['end'] - row['start'] + 1)))
 
         # Flatten the distances and the data, and create a DataFrame
-        distances_flat = distances.flatten()
-        chr_data_flat = chr_data.values.flatten()
-        df = pd.DataFrame({'distance': distances_flat, 'value': chr_data_flat})
+        df = pd.DataFrame({'distance': distances.flatten(), 'value': chr_data.values.flatten()})
 
         # Group by distance and calculate the mean and variance
-        distance_stats = df.groupby('distance').agg(['mean', 'var'])
-        distance_mean = distance_stats['value', 'mean']
-        distance_var = distance_stats['value', 'var']
+        distance_stats = df.groupby('distance')['value'].agg(['mean', 'var'])
 
-        # Combine with the existing distance_means and distance_vars
-        distance_means = pd.concat([distance_means, distance_mean.to_frame().T])
-        distance_vars = pd.concat([distance_vars, distance_var.to_frame().T])
-
-    distance_means.index = metadata['chr']
-    distance_vars.index = metadata['chr']
-
-    distance_means.index = metadata['chr']
+        # Store the results into the dictionary
+        distance_means[row['chr']] = distance_stats['mean'].to_dict()
+        distance_vars[row['chr']] = distance_stats['var'].to_dict()
 
     return distance_means, distance_vars
+
 
 def interchr_contacts_mean_var(metadata, data):
     """
@@ -85,8 +78,6 @@ def interchr_contacts_mean_var(metadata, data):
 
     return mean, var
 
-from scipy.stats import nbinom
-
 def generate_data_from_neg_binomial(metadata, data):
     """
     Generates a new dataframe with the same shape as data, using a negative binomial distribution.
@@ -109,7 +100,7 @@ def generate_data_from_neg_binomial(metadata, data):
     
     
     # For each chromosome
-    for chr, row in metadata.iterrows():
+    for _, row in metadata.iterrows():
         prev_p = prev_r = None
         # For each distance
         for distance in range(row['end'] - row['start'] + 1):
@@ -117,8 +108,9 @@ def generate_data_from_neg_binomial(metadata, data):
             if distance == 0: 
                 continue
             # Calculate the parameters for the negative binomial distribution
-            mean = distance_means.iloc[chr, distance]
-            var = distance_vars.iloc[chr, distance]           
+            
+            mean = distance_means[row['chr']].get(distance)
+            var = distance_vars[row['chr']].get(distance)
             if var != None and mean != None and var > mean and var != 0:
                 p = mean/var
                 r = mean**2/(var-mean)
@@ -158,3 +150,4 @@ def generate_data_from_neg_binomial(metadata, data):
     np.fill_diagonal(new_data.values, 0)
 
     return new_data
+
