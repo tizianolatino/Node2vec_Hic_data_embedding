@@ -31,17 +31,7 @@ def drop_chr(metadata, data, chr_to_drop):
     ValueError: If no chromosome with the provided name is found in the metadata.
 
     """
-    # Check if the first 'start' point in the metadata is 0
-    if metadata.iloc[0]['start'] != 0:
-        adjustment = metadata.iloc[0]['start']
-        # Adjust the 'start' and 'end' points in the metadata
-        metadata['start'] -= adjustment
-        metadata['end'] -= adjustment
-    
-    # Check if the first index in the data is 0
-    if data.index[0] != 0:
-        # Reset the index of the data to start from 0
-        data = data.reset_index(drop=True)
+   
     
     # Find the row for the chromosome to drop
     chr_row = metadata.loc[metadata['chr'] == chr_to_drop]
@@ -87,17 +77,6 @@ def remove_isolated_bins(metadata, data):
            of the chromosomes adjusted, and the new adjacency matrix with the isolated bins removed.
     """
     
-    # Check if the first 'start' point in the metadata is 0
-    if metadata.iloc[0]['start'] != 0:
-        adjustment = metadata.iloc[0]['start']
-        # Adjust the 'start' and 'end' points in the metadata
-        metadata['start'] -= adjustment
-        metadata['end'] -= adjustment
-    
-    # Check if the first index in the data is 0
-    if data.index[0] != 0:
-        # Reset the index of the data to start from 0
-        data = data.reset_index(drop=True)
     
     # Find the rows and columns in the adjacency matrix that are all zero
     isolated_bins = data.index[(data == 0).all(1)]

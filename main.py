@@ -12,8 +12,11 @@ import os
 from negative_binomial_model import *
 from Hic_data_prepro import *
 from utils import *
+from utils_data_metadata import adjust_indices_to_zero
 
 def main(data, metadata):
+    
+   metadata, data = adjust_indices_to_zero(metadata, data)
 
    # Drop the specified chromosome and adjust the start and end points of the remaining chromosomes
    metadata, data = drop_chr(metadata, data, "'chrY'")
@@ -40,7 +43,7 @@ def main(data, metadata):
     
    return data, metadata
 
-if __name__ == "__main__":
+if __name__ == "__main__-":
     
     # Load the metadata and data
     data = pd.read_csv('Data/raw_GM12878_1Mb.csv', header=None)
