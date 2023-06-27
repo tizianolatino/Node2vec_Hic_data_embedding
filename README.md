@@ -13,13 +13,13 @@ To install this project, follow these steps:
 1. Clone the repository to your local machine:
 
 ```bash
-git clone https://github.com/tizianolatino/SC_exam.git
+git clone https://github.com/tizianolatino/Node2vec_Hic_data_embedding.git
 ```
 
 2. Navigate into the project directory:
 
 ```bash
-cd SC_exam
+cd Node2vec_Hic_data_embedding
 ```
 
 3. Install the required Python packages:
