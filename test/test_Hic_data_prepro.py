@@ -9,11 +9,22 @@ Created on Wed Jun  7 17:50:37 2023
 import unittest
 import pandas as pd
 import numpy as np
-from Hic_data_prepro import *
+import sys
+sys.path.append('..')
+from Hic_data_prepro import drop_chr, remove_isolated_bins, remove_isolated_bins
 
 class TestChromosomeFunctions(unittest.TestCase):
+    """
+    TestChromosomeFunctions is a test case class which inherits from unittest.TestCase.
+    This class is designed to test various functions related to manipulating chromosomal data.
+    """
+
 
     def setUp(self):
+        """
+        setUp is a special method that unittest.TestCase calls for you just before each test method is run. 
+        It includes code to create and configure the test environment so that everything is ready when the test methods are run.
+        """
         self.metadata = pd.DataFrame({
             'chr': ['chr1', 'chr2', 'chrY', 'chr3'],
             'start': [0, 100, 200, 300],
@@ -27,6 +38,12 @@ class TestChromosomeFunctions(unittest.TestCase):
         self.data.iloc[:, 250:260] = 0
 
     def test_drop_chr(self):
+        """
+        test_drop_chr tests the function drop_chr by checking whether 'chrY' has been removed and 
+        the start and end points for 'chr3' are adjusted in the metadata. It also checks if 'chrY' bins 
+        are removed from the adjacency matrix in the data.
+        """
+        
         updated_metadata, updated_data = drop_chr(self.metadata, self.data, 'chrY')
 
         # Check that 'chrY' is removed
@@ -41,6 +58,12 @@ class TestChromosomeFunctions(unittest.TestCase):
         self.assertEqual(updated_data.shape, (300, 300))
 
     def test_remove_isolated_bins(self):
+        """
+        test_remove_isolated_bins tests the function remove_isolated_bins by verifying if the 
+        isolated bins are removed from the adjacency matrix, and the 'end' point for 'chr1' and 
+        the start and end points for the remaining chromosomes are adjusted in the metadata.
+        """
+        
         updated_metadata, updated_data = remove_isolated_bins(self.metadata, self.data)
 
         # Check that the isolated bins are removed from the adjacency matrix

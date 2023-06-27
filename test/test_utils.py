@@ -1,44 +1,46 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Jun  1 16:54:35 2023
-
-@author: tizianolatino
-"""
-
-import unittest
 import pandas as pd
 import numpy as np
-from utils import *
+import unittest
+import sys
+sys.path.append('..')
+from utils import reduce_dimension
 
 class TestReduceDimension(unittest.TestCase):
-    def setUp(self):
-        self.metadata = pd.DataFrame({'chr': ['chr1', 'chr2', 'chr3', 'chr4'],
-                                      'start': [0, 100, 200, 300],
-                                      'end': [99, 199, 299, 399]})
-        self.data = pd.DataFrame(index=range(400), columns=range(400))
 
     def test_reduce_dimension(self):
-        # Test that the dimensions are reduced correctly
-        reduced_data, reduced_metadata = reduce_dimension(self.metadata, self.data, 0.1)
+        """
+        Description: This test checks whether the function correctly reduces the dimension of the data
+        by a given percent for each chromosome, which involves reducing the number of bins, and adjusting the
+        start and end indices in the metadata accordingly. The assertions are checking:
+        1. The shape of the new_data DataFrame is correctly reduced.
+        2. The start and end indices in the new_metadata are correctly adjusted.
+        """
 
-        # Assert that the dimensions of the data are reduced
-        self.assertEqual(reduced_data.shape, (360, 360))
+        # Step 1: Create a metadata DataFrame.
+        metadata = pd.DataFrame({
+            'chr': ['chr1', 'chr2', 'chr3'],
+            'start': [0, 100, 200],
+            'end': [99, 199, 299]
+        })
 
-        # Assert that the dimensions of the metadata are the same
-        self.assertEqual(reduced_metadata.shape, self.metadata.shape)
+        # Step 2: Create a DataFrame to represent the adjacency matrix (data).
+        data = pd.DataFrame(np.random.randint(0, 100, (300, 300)))
 
-        for i, row in reduced_metadata.iterrows():
-            # Check the new 'start' and 'end' values
-            self.assertEqual(row['start'], i * 90)
-            self.assertEqual(row['end'], (i + 1) * 90 - 1)
-            
-            
-            # Check if the number of rows/columns in the reduced data equals to the last 'end' index + 1
-            self.assertEqual(reduced_data.shape[0], reduced_metadata.iloc[-1]['end'] + 1)
-            self.assertEqual(reduced_data.shape[1], reduced_metadata.iloc[-1]['end'] + 1)
+        # Step 3: Apply the reduce_dimension function.
+        percent = 0.1  # Reduce each chromosome by 10%
+        new_data, new_metadata = reduce_dimension(metadata, data, percent)
 
+        # Step 4: Check that the dimensions of the new_data DataFrame are correct.
+        expected_data_shape = (270, 270)  # Each chromosome was reduced by 10 bins.
+        self.assertEqual(new_data.shape, expected_data_shape)
 
+        # Step 5: Check that the start and end indices in new_metadata are correct.
+        expected_metadata = pd.DataFrame({
+            'chr': ['chr1', 'chr2', 'chr3'],
+            'start': [0, 90, 180],
+            'end': [89, 179, 269]
+        })
+        pd.testing.assert_frame_equal(new_metadata, expected_metadata)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
