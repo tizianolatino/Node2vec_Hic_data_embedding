@@ -1,3 +1,10 @@
+def add_rbt_to_data(data, metadata, chr1, start1, end1, chr2, start2, end2):
+    
+    """ to implement """
+    
+    return data
+
+
 def generate_node_labels(metadata, chr1, start1, end1, chr2, start2, end2):
     """
     Generates labels for each bin in the data.
