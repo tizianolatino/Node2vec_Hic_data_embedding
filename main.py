@@ -28,24 +28,25 @@ def main(data, metadata):
    # Remove isolated bins and adjust the start and end points of the chromosomes
    metadata, data = remove_isolated_bins(metadata, data)
    
-   #reduce dimension
+   # Reduce dimension
    data, metadata = reduce_dimension(metadata, data, 0.9)
 
    # Generate a new dataframe with values from a negative binomial distribution
    neg_bin_data = generate_data_from_neg_binomial(metadata, data)
    
-   
+   # Generates labels for each bin in the data
    node_labels = generate_node_labels(metadata, "'chr1'", 5, 10, "'chr6'", 105,110)
    
    # Plot the Adajacency Matrix
    plot_data(neg_bin_data, metadata, [0,10,100,1000,5000,10000])
    
+   # Node Embeddings and PCA data reduction
+   embeddings = data_to_embedding( neg_bin_data)
    
-   embeddings = data_to_embedding(data)
-   
+   # Plots a 2D  of the embeddings
    plot_embedding(embeddings, node_labels)
    
-   return neg_bin_data, metadata
+   return neg_bin_data, metadata, embeddings
 
 if __name__ == "__main__":
     
@@ -54,7 +55,7 @@ if __name__ == "__main__":
     metadata = pd.read_csv('Data/metadata.csv')
     
 
-    #neg_bin_data, neg_bin_metadata = main(data, metadata)
+    neg_bin_data, neg_bin_metadata, embeddings = main(data, metadata)
 
     
 

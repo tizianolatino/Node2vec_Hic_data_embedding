@@ -98,6 +98,7 @@ def generate_data_from_neg_binomial(metadata, data):
     # Initialize the new data with zeros
     new_data = pd.DataFrame(0, index=data.index, columns=data.columns)
     
+    np.random.seed(42)
     
     # For each chromosome
     for _, row in metadata.iterrows():
