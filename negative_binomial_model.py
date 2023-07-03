@@ -78,7 +78,7 @@ def interchr_contacts_mean_var(metadata, data):
 
     return mean, var
 
-def generate_data_from_neg_binomial(metadata, data):
+def generate_data_from_neg_binomial(metadata, data, distance_means, distance_vars, interchr_mean, interchr_var):
     """
     Generates a new dataframe with the same shape as data, using a negative binomial distribution.
 
@@ -90,11 +90,7 @@ def generate_data_from_neg_binomial(metadata, data):
     Returns:
     pd.DataFrame: A new dataframe with values generated from a negative binomial distribution.
     """
-    # Calculate the mean and variance for each distance within each chromosome, 
-    # and for interchromosomal interactions
-    distance_means, distance_vars = intrachr_contacts_mean_var(metadata, data)
-    interchr_mean, interchr_var = interchr_contacts_mean_var(metadata, data)
-
+    
     # Initialize the new data with zeros
     new_data = pd.DataFrame(0, index=data.index, columns=data.columns)
     
@@ -108,8 +104,7 @@ def generate_data_from_neg_binomial(metadata, data):
             # Skip the case of distance equals to zero
             if distance == 0: 
                 continue
-            # Calculate the parameters for the negative binomial distribution
-            
+            # Calculate the parameters for the negative binomial distribution            
             mean = distance_means[row['chr']].get(distance)
             var = distance_vars[row['chr']].get(distance)
             if var != None and mean != None and var > mean and var != 0:
