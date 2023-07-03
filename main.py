@@ -8,6 +8,7 @@ Created on Thu Jun  8 11:33:41 2023
 
 import pandas as pd
 import os
+import argparse
 
 from negative_binomial_model import generate_data_from_neg_binomial, intrachr_contacts_mean_var, interchr_contacts_mean_var
 from Hic_data_prepro import drop_chr, remove_isolated_bins
@@ -46,7 +47,7 @@ def main(data, metadata):
                                             intrachr_means, intrachr_vars,interchr_mean, interchr_var)                                                                
    
    # Generates labels for each bin in the data
-   node_labels = generate_node_labels(metadata, "'chr1'", 5, 10, "'chr6'", 105, 110)
+   node_labels = generate_node_labels(metadata_red, "'chr1'", 5, 10, "'chr6'", 105, 110)
    
    # Plot the Adajacency Matrix
    plot_data(data_toy_trans, metadata_red, [0, 10, 100, 1000, 5000, 10000])
@@ -61,10 +62,27 @@ def main(data, metadata):
 
 if __name__ == "__main__":
     
-    # Load the metadata and data
-    data = pd.read_csv('Data/raw_GM12878_1Mb.csv', header=None)
-    metadata = pd.read_csv('Data/metadata.csv')
+    # Create the parser
+    parser = argparse.ArgumentParser(description='Read two CSV files.')
     
+    # Add the arguments
+    parser.add_argument('csv1', type=str, help='The path to the first CSV file')
+    parser.add_argument('csv2', type=str, help='The path to the second CSV file')
+    
+    # Parse the arguments
+    args = parser.parse_args()
+    
+    # Read the CSV files using pandas
+    data = pd.read_csv(args.csv1,  header=None)
+    metadata = pd.read_csv(args.csv2)
+    
+    # Print the data frames
+    print("Shape of the first CSV file:")
+    print(data.shape)
+    print("\nShape of the second CSV file:")
+    print(metadata.shape)
+
+     
 
     neg_bin_data, neg_bin_metadata, data_toy_trans, embeddings = main(data, metadata)
 
