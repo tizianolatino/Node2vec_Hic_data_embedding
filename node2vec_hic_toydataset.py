@@ -19,6 +19,16 @@ def data_to_embedding(data, n2v_dimensions=16, dimensions=2, walk_length=30, num
     Returns:
     np.ndarray: The data embedded into the specified number of dimensions.
     """
+    
+    if n2v_dimensions <= 0:
+        raise ValueError("n2v_dimensions must be greater than 0")
+    if walk_length <= 0:
+        raise ValueError("walk_length must be greater than 0")
+    if dimensions <= 0:
+        raise ValueError("PCA dimensions must be greater than 0")
+    if p < 0 or q < 0:
+        raise ValueError("Parameters p and q must be non-negative")
+    
     # Convert the DataFrame to a numpy array
     adjacency = data.values
 

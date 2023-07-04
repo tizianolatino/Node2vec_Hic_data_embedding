@@ -91,6 +91,70 @@ class TestGenerateNodeLabels(unittest.TestCase):
         self.assertTrue(all(l == 4 for l in labels[371:400]))   # chr4 after RBT region (label=4)
         self.assertTrue(all(l == 5 for l in labels[400:500]))   # chr5 (label=5)
 
+class TestEdgeCases(unittest.TestCase):
+    def test_start_larger_than_end(self):
+        """
+        Test that an error is raised when `start` is larger than `end` in `metadata`.
+        """
+        metadata = pd.DataFrame({
+            'chr': ['chr1', 'chr2'],
+            'start': [100, 200],
+            'end': [99, 199]
+        })
+        with self.assertRaises(ValueError):
+            get_translocated_bins(metadata, 'chr1', 10, 20, 'chr2', 130, 140)
+
+    def test_non_standard_chr_names(self):
+        """
+        Test that an error is raised when non-standard chromosome names are present.
+        """
+        metadata = pd.DataFrame({
+            'chr': ['chr1A', 'chr2B'],
+            'start': [0, 100],
+            'end': [99, 199]
+        })
+        with self.assertRaises(ValueError):
+            get_translocated_bins(metadata, 'chr1', 10, 20, 'chr2', 130, 140)
+
+    def test_overlapping_ranges(self):
+        """
+        Test that an error is raised when overlapping ranges are present in `metadata`.
+        """
+        metadata = pd.DataFrame({
+            'chr': ['chr1', 'chr2', 'chr1'],
+            'start': [0, 100, 50],
+            'end': [99, 199, 150]
+        })
+        with self.assertRaises(ValueError):
+            get_translocated_bins(metadata, 'chr1', 10, 20, 'chr2', 130, 140)
+
+    def test_na_values_in_metadata(self):
+        """
+        Test that an error is raised when `metadata` contains NA values.
+        """
+        metadata = pd.DataFrame({
+            'chr': ['chr1', 'chr2', np.nan],
+            'start': [0, 100, np.nan],
+            'end': [99, 199, np.nan]
+        })
+        with self.assertRaises(ValueError):
+            get_translocated_bins(metadata, 'chr1', 10, 20, 'chr2', 130, 140)
+
+    def test_negative_values_in_metadata(self):
+        """
+        Test that an error is raised when `start` or `end` values are negative in `metadata`.
+        """
+        metadata = pd.DataFrame({
+            'chr': ['chr1', 'chr2'],
+            'start': [-10, 100],
+            'end': [99, -50]
+        })
+        with self.assertRaises(ValueError):
+            get_translocated_bins(metadata, 'chr1', 10, 20, 'chr2', 130, 140)
+
+
+
+
 if __name__ == '__main__':
     unittest.main()
 

@@ -84,6 +84,7 @@ class TestReduceDimension(unittest.TestCase):
         percent = 1.1
         with self.assertRaises(ValueError):
             new_data, new_metadata = reduce_dimension(self.metadata, self.data, percent)
+            print(new_data,new_metadata)
 
     def test_negative_reduction(self):
         """

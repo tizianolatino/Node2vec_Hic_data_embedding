@@ -19,9 +19,10 @@ def reduce_dimension(metadata, data, percent):
     """
     # Assertion to ensure that the percent is a valid value.
     if percent < 0.0 or percent > 1.0:
-        warnings.warn("Percent should be between 0 and 1 (not included). Values outside this range may lead to unexpected results.")
+        raise ValueError("Percent should be between 0 and 1 (inclusive).")
     if percent == 1.0:
         # If percent is 1, all data and metadata should be dropped.
+        warnings.warn("The resulting data and metadata are empty because percent equals 1.")
         return pd.DataFrame(), pd.DataFrame()
 
     new_data = data.copy(deep=True)

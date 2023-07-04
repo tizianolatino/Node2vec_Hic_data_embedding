@@ -56,7 +56,6 @@ class TestHiCDataFunctions(unittest.TestCase):
         # check that the mean and variance are non-negative
         self.assertTrue(mean >= 0)
         self.assertTrue(var >= 0)
-        
 
     def test_generate_data_from_neg_binomial(self):
         """
@@ -64,7 +63,10 @@ class TestHiCDataFunctions(unittest.TestCase):
         that the generated data has the correct shape, contains zeros on the diagonal, and matches the
         negative binomial distribution.
         """
-        neg_bin_data = generate_data_from_neg_binomial(self.metadata, self.data)
+        mean, var = intrachr_contacts_mean_var(self.metadata, self.data)
+        interchr_mean, interchr_var = interchr_contacts_mean_var(self.metadata, self.data)
+        
+        neg_bin_data = generate_data_from_neg_binomial(self.metadata, self.data, mean, var, interchr_mean, interchr_var)
         self.assertEqual(self.data.shape, neg_bin_data.shape)
         self.assertTrue((np.diag(neg_bin_data.values) == 0).all())
         try:
@@ -72,6 +74,55 @@ class TestHiCDataFunctions(unittest.TestCase):
             self.assertTrue(result)
         except AssertionError as error:
             self.fail(str(error))
-            
+
+    def test_empty_data(self):
+        """
+        Test function when input data is empty.
+        """
+        metadata = pd.DataFrame({'chr': [], 'start': [], 'end': []})
+        data = pd.DataFrame()
+        
+        mean, var = intrachr_contacts_mean_var(metadata, data)
+        self.assertEqual(mean, {})
+        self.assertEqual(var, {})
+
+        mean, var = interchr_contacts_mean_var(metadata, data)
+        self.assertTrue(np.isnan(mean))
+        self.assertTrue(np.isnan(var))
+
+    def test_all_zeros_data(self):
+        """
+        Test function when input data contains all zeros.
+        """
+        metadata = self.metadata
+        data = pd.DataFrame(np.zeros((300, 300)))
+        
+        distance_means, distance_vars = intrachr_contacts_mean_var(metadata, data)
+        for chr in distance_means:
+            self.assertTrue(all(m == 0 for m in distance_means[chr].values()))
+            self.assertTrue(all(v == 0 for v in distance_vars[chr].values()))
+        
+        interchr_mean, interchr_var = interchr_contacts_mean_var(metadata, data)
+        self.assertEqual(interchr_mean, 0.0)
+        self.assertEqual(interchr_var, 0.0)
+
+
+        with self.assertRaises(ValueError):
+            neg_bin_data = generate_data_from_neg_binomial(metadata, data, distance_means, distance_vars, interchr_mean, interchr_var)
+
+    def test_data_with_na_values(self):
+        """
+        Test function when input data contains NA values.
+        """
+        metadata = self.metadata
+        data = self.data.copy()
+        data.iloc[0, 0] = np.nan
+        
+        with self.assertRaises(ValueError):
+            intrachr_contacts_mean_var(metadata, data)
+
+        with self.assertRaises(ValueError):
+            interchr_contacts_mean_var(metadata, data)
+
 if __name__ == '__main__':
     unittest.main()

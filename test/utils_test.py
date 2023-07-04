@@ -27,6 +27,9 @@ def validate_neg_binomial_distribution(metadata, original_data, neg_bin_data):
         bool: Returns True if the original data matches the distribution of the generated data, 
         otherwise it raises an AssertionError.
     """
+    
+    if metadata.empty or original_data.empty or neg_bin_data.empty:
+        raise AssertionError("Empty DataFrame provided.")
 
     for _, row in metadata.iterrows():
         for distance in range(row['end'] - row['start'] + 1):

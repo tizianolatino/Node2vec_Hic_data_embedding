@@ -15,6 +15,24 @@ def get_translocated_bins(metadata, chr1, start1, end1, chr2, start2, end2):
     Returns:
     list, list: The lists of bins for the two chromosomes after the translocation.
     """
+    
+    if metadata.isnull().values.any():
+        raise ValueError("Metadata contains NaN values.")
+    
+    # Check for existence of chromosomes in metadata
+    if chr1 not in metadata['chr'].values or chr2 not in metadata['chr'].values:
+        raise ValueError(f"Chromosomes {chr1} or {chr2} not found in metadata.")
+        
+        
+    # Check for negative and invalid start and end values
+    if metadata['start'].min() < 0 or metadata['end'].min() < 0 or any(metadata['start'] > metadata['end']):
+        raise ValueError("Invalid start or end values in metadata.")
+    
+    # Check for overlapping ranges
+    if any(metadata['end'].values[:-1] > metadata['start'].values[1:]):
+        raise ValueError("Overlapping ranges in metadata.")
+    
+    
     # Get the start and end indices for the chromosomes
     chr1_start, chr1_end = metadata.loc[metadata['chr'] == chr1, ['start', 'end']].values[0]
     chr2_start, chr2_end = metadata.loc[metadata['chr'] == chr2, ['start', 'end']].values[0]

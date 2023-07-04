@@ -15,6 +15,8 @@ def calculate_parameters(mean, var, prev_p, prev_r):
         p = mean / var
         r = mean ** 2 / (var - mean)
     else:
+        if prev_p is None or prev_r is None:
+            raise ValueError("p and r cannot be None")
         p, r = prev_p, prev_r
 
     return p, r

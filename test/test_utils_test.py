@@ -43,5 +43,54 @@ class TestYourModule(unittest.TestCase):
         self.neg_bin_data.loc[1, 1] = 1000
         self.assertRaises(AssertionError, validate_neg_binomial_distribution, self.metadata, self.original_data, self.neg_bin_data)
 
+
+    def test_assertAlmostEqualRelative_(self):
+        """
+        Test function for 'assertAlmostEqualRelative'.
+        
+        This test asserts that the function is able to correctly determine if two numbers are approximately equal 
+        relative to the magnitude of the first number.
+        """
+        # Test with equal numbers
+        assertAlmostEqualRelative(self, 100, 100, rel_tol=0.02)  # should not raise an exception
+
+        # Test with numbers that are exactly on the boundary of the relative tolerance
+        assertAlmostEqualRelative(self, 100, 102, rel_tol=0.02)  # should not raise an exception
+
+        # Test with numbers that are just outside the boundary of the relative tolerance
+        with self.assertRaises(AssertionError):
+            assertAlmostEqualRelative(self, 100, 102.01, rel_tol=0.02)
+
+        # Test with negative numbers
+        assertAlmostEqualRelative(self, -100, -102, rel_tol=0.02)  # should not raise an exception
+
+        # Test with one number being zero
+        with self.assertRaises(AssertionError):
+            assertAlmostEqualRelative(self, 0, 1, rel_tol=0.02)
+
+    def test_validate_neg_binomial_distribution_(self):
+        """
+        Test function for 'validate_neg_binomial_distribution'.
+
+        This test asserts that the function can correctly validate that the original data matches the distribution 
+        of the generated data.
+        """
+        # Test with identical DataFrames
+        self.assertTrue(validate_neg_binomial_distribution(self.metadata, self.original_data, self.neg_bin_data))
+
+        # Test with DataFrames that are different in one element
+        self.neg_bin_data.loc[1, 1] = 1000
+        self.assertRaises(AssertionError, validate_neg_binomial_distribution, self.metadata, self.original_data, self.neg_bin_data)
+
+        # Test with DataFrames that are different in all elements
+        neg_bin_data_all_diff = self.neg_bin_data + 1000
+        self.assertRaises(AssertionError, validate_neg_binomial_distribution, self.metadata, self.original_data, neg_bin_data_all_diff)
+
+        # Test with empty DataFrames
+        metadata_empty = pd.DataFrame()
+        data_empty = pd.DataFrame()
+        self.assertRaises(AssertionError, validate_neg_binomial_distribution, metadata_empty, data_empty, data_empty)
+
+
 if __name__ == '__main__':
     unittest.main()

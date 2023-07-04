@@ -2,6 +2,7 @@ from utils_statistics import calculate_parameters
 import pandas as pd
 import numpy as np
 from scipy.stats import nbinom
+import warnings
 
 def intrachr_contacts_mean_var(metadata, data):
     """
@@ -16,6 +17,15 @@ def intrachr_contacts_mean_var(metadata, data):
     dict: Two dictionaries where the keys are the chromosomes, each item is a dictionary where each key is a distance,
           and the value is the mean and variance of contact value for that distance within the chromosome.
     """
+    
+    if data.isnull().any().any():
+        raise ValueError("Input data should not contain NaN values.")
+    
+    # Check if the data or metadata are empty
+    if metadata.empty or data.empty:
+        warnings.warn('Input metadata or data is empty.')
+        return {}, {}
+    
     distance_means = {}
     distance_vars = {}
 
@@ -52,6 +62,13 @@ def interchr_contacts_mean_var(metadata, data):
    Returns:
    tuple: The mean and variance of contact value for interchromosomal interactions.
    """
+   
+    if data.isnull().any().any():
+       raise ValueError("Input data should not contain NaN values.")
+   
+    if metadata.empty or data.empty:
+        warnings.warn('Input metadata or data is empty.')
+        return np.nan, np.nan
     # Create a copy of the data to avoid modifying the original
     data_copy = data.copy()
 

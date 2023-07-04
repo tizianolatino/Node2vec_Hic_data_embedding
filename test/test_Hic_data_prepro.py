@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Jun  7 17:50:37 2023
-
-@author: tizianolatino
-"""
-
 import unittest
 import pandas as pd
 import numpy as np
@@ -83,6 +75,37 @@ class TestChromosomeFunctions(unittest.TestCase):
         chr3_row = updated_metadata[updated_metadata['chr'] == 'chr3']
         self.assertEqual(chr3_row['start'].values[0], 280)
         self.assertEqual(chr3_row['end'].values[0], 379)
+        
+    def test_drop_chr_nonexistent(self):
+        """
+        test_drop_chr_nonexistent tests the function drop_chr by attempting to drop a chromosome that does not exist in the metadata.
+        It expects to receive a ValueError.
+        """
+        
+        with self.assertRaises(ValueError):
+            drop_chr(self.metadata, self.data, 'chrX')  # 'chrX' does not exist in the metadata
+
+    def test_remove_isolated_bins_none(self):
+        """
+        test_remove_isolated_bins_none tests the function remove_isolated_bins by passing data with no isolated bins.
+        It expects the output data and metadata to be the same as the input.
+        """
+
+        # Remove the isolated bins in the setup data
+        no_isolated_data = self.data.copy(deep=True)
+        no_isolated_data.iloc[50:60, :] = np.random.rand(10, 400)
+        no_isolated_data.iloc[:, 50:60] = np.random.rand(400, 10)
+        no_isolated_data.iloc[250:260, :] = np.random.rand(10, 400)
+        no_isolated_data.iloc[:, 250:260] = np.random.rand(400, 10)
+
+        updated_metadata, updated_data = remove_isolated_bins(self.metadata, no_isolated_data)
+
+        # The updated data should be the same as no_isolated_data
+        pd.testing.assert_frame_equal(updated_data, no_isolated_data)
+
+        # The updated metadata should be the same as the setup metadata
+        pd.testing.assert_frame_equal(updated_metadata, self.metadata)
+   
 
 if __name__ == '__main__':
     unittest.main()
