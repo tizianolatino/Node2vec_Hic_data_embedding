@@ -1,13 +1,7 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Jun  1 16:51:09 2023
-
-@author: tizianolatino
-"""
 
 import pandas as pd
 import numpy as np
+import warnings
 
 def reduce_dimension(metadata, data, percent):
     """
@@ -23,6 +17,13 @@ def reduce_dimension(metadata, data, percent):
     pd.DataFrame: The reduced dataframe.
     pd.DataFrame: The updated metadata dataframe.
     """
+    # Assertion to ensure that the percent is a valid value.
+    if percent < 0.0 or percent > 1.0:
+        warnings.warn("Percent should be between 0 and 1 (not included). Values outside this range may lead to unexpected results.")
+    if percent == 1.0:
+        # If percent is 1, all data and metadata should be dropped.
+        return pd.DataFrame(), pd.DataFrame()
+
     new_data = data.copy(deep=True)
     new_metadata = metadata.copy(deep=True)
     
