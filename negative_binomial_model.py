@@ -1,11 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Mar 15 10:43:09 2023
-
-@author: tizianolatino
-"""
-
+from utils_statistics import calculate_parameters
 import pandas as pd
 import numpy as np
 from scipy.stats import nbinom
@@ -107,11 +100,7 @@ def generate_data_from_neg_binomial(metadata, data, distance_means, distance_var
             # Calculate the parameters for the negative binomial distribution            
             mean = distance_means[row['chr']].get(distance)
             var = distance_vars[row['chr']].get(distance)
-            if var != None and mean != None and var > mean and var != 0:
-                p = mean/var
-                r = mean**2/(var-mean)
-            else:
-                p, r = prev_p, prev_r
+            p, r = calculate_parameters(mean, var, prev_p, prev_r)
             prev_p, prev_r = p, r
 
             # For each pair of bins at this distance
@@ -123,8 +112,7 @@ def generate_data_from_neg_binomial(metadata, data, distance_means, distance_var
 
 
     # For the interchromosomal regions
-    p = interchr_mean / interchr_var
-    r = interchr_mean**2 / (interchr_var - interchr_mean)
+    p, r = calculate_parameters(interchr_mean, interchr_var, 0, 0)
 
     # Get the upper triangular indices excluding the diagonal
     i_upper, j_upper = np.triu_indices(new_data.shape[0], 1)

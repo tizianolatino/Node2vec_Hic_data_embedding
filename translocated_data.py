@@ -1,4 +1,5 @@
 from itertools import combinations
+from utils_statistics import calculate_parameters
 import numpy as np
 
 def get_translocated_bins(metadata, chr1, start1, end1, chr2, start2, end2):
@@ -59,22 +60,16 @@ def modify_interchr_contacts(data, metadata, chr1, start1, end1, chr2, start2, e
             mean_ij = intrachr_means[chr_name].get(dist)
             var_ij = intrachr_vars[chr_name].get(dist)
             
-            # Check if mean and variance exist
-            if mean_ij is not None and var_ij is not None:
-                # Calculate the parameters for the negative binomial distribution
-                if var_ij != None and mean_ij != None and var_ij > mean_ij and var_ij != 0:
-                    p = mean_ij/var_ij
-                    r = mean_ij**2/(var_ij-mean_ij)
-                else:
-                    p, r = prev_p, prev_r
-                prev_p, prev_r = p, r
+            # Calculate the parameters p and r using the mean and variance
+            p, r = calculate_parameters(mean_ij, var_ij, prev_p, prev_r)
+            prev_p, prev_r = p, r
          
-                # Generate contact from the negative binomial distribution
-                contact_ij = np.random.negative_binomial(r, p)
-            
-                # Substitute the new contact in the DataFrame
-                data_copy.at[i, j] = contact_ij
-                data_copy.at[j, i] = contact_ij  # Ensure the matrix remains symmetric
+            # Generate contact from the negative binomial distribution
+            contact_ij = np.random.negative_binomial(r, p)
+        
+            # Substitute the new contact in the DataFrame
+            data_copy.at[i, j] = contact_ij
+            data_copy.at[j, i] = contact_ij  # Ensure the matrix remains symmetric
 
     return data_copy
 
@@ -97,8 +92,7 @@ def modify_intrachr_contacts(metadata, data, chr1, start1, end1, chr2, start2, e
     data_copy = data.copy()
 
     # Calculate parameters for negative binomial distribution
-    r = interchr_mean ** 2 / (interchr_var - interchr_mean)
-    p = interchr_mean / interchr_var
+    p, r = calculate_parameters(interchr_mean, interchr_var, 0, 0)
 
     # Put the parameters into a list for easy looping
     chr_params = [(chr1, start1, end1), (chr2, start2, end2)]
